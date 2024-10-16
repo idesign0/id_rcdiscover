@@ -2,6 +2,11 @@
 Changelog for package rcdiscover
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.2 (2024-10-16)
+------------------
+
+* Disabled applying filter text from last run of rcdiscover-gui
+
 2.0.1 (2024-07-30)
 ------------------
 
