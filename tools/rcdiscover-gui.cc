@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
           if (key == "width") width=std::stoi(value);
           if (key == "height") height=std::stoi(value);
           if (key == "only_rc") only_rc=std::stoi(value);
-          if (key == "filter") filter=value;
+//          if (key == "filter") filter=value; // do not apply stored filter text
           if (key == "sort_col") sort_col=std::stoi(value);
           if (key == "sort_down") sort_down=static_cast<bool>(std::stoi(value));
         }
