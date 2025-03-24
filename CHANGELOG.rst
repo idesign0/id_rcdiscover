@@ -2,6 +2,11 @@
 Changelog for package rcdiscover
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.3 (2025-03-24)
+------------------
+
+* Ensure to turn off reverse path filtering on newer linux systems
+
 2.0.2 (2024-10-16)
 ------------------
 
