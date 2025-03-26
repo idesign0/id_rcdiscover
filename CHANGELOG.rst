@@ -2,6 +2,11 @@
 Changelog for package rcdiscover
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.4 (2025-03-26)
+------------------
+
+* Removed changes to path filtering configuration as sysctl command fails with it
+
 2.0.3 (2025-03-24)
 ------------------
 
