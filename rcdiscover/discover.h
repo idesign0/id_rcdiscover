@@ -72,6 +72,7 @@ class Discover
     */
 
     void broadcastRequest();
+    void broadcastRequest(const std::vector<std::string> &iface);
 
     /**
       Returns a discovery response. This method should be called until there is

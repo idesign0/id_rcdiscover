@@ -116,7 +116,7 @@ int runDiscover(const std::string &command, int argc, char **argv)
   // broadcast discover request
 
   rcdiscover::Discover discover;
-  discover.broadcastRequest();
+  discover.broadcastRequest(device_filter.iface);
 
   std::vector<rcdiscover::DeviceInfo> infos;
 

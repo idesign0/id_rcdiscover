@@ -104,6 +104,33 @@ void Discover::broadcastRequest()
   }
 }
 
+void Discover::broadcastRequest(const std::vector<std::string> &iface)
+{
+  req_nums_.clear();
+
+  std::vector<uint8_t> discovery_cmd{0x42, 0x11, 0, 0x02, 0, 0, 0, 0};
+
+int i=0;
+  for (auto &socket : sockets_)
+  {
+    if (iface.size() == 0 || std::find(iface.begin(), iface.end(), socket.getIfaceName()) != iface.end())
+    {
+std::cout << i++ << ": " << socket.getIfaceName() << std::endl;
+      req_nums_.push_back(GigERequestCounter::getNext());
+      std::tie(discovery_cmd[6], discovery_cmd[7]) = req_nums_.back();
+
+      try
+      {
+        socket.send(discovery_cmd);
+      }
+      catch(const NetworkUnreachableException &)
+      {
+        continue;
+      }
+    }
+  }
+}
+
 bool Discover::getResponse(std::vector<DeviceInfo> &info,
                            int timeout_per_socket)
 {
