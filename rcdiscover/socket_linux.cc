@@ -231,21 +231,24 @@ void SocketLinux::bindImpl(const ::sockaddr_in& addr)
 
 void SocketLinux::sendImpl(const std::vector<uint8_t>& sendbuf)
 {
-  if (::sendto(sock_,
-              static_cast<const void *>(sendbuf.data()),
-              sendbuf.size(),
-              0,
-              reinterpret_cast<const sockaddr *>(&dst_addr_),
-              static_cast<socklen_t>(sizeof(sockaddr_in))) == -1)
-   {
-     if (errno == ENETUNREACH)
-     {
-       throw NetworkUnreachableException(
-             "Error while sending data - network unreachable", errno);
-     }
+  if (dst_addr_.sin_addr.s_addr != INADDR_ANY)
+  {
+    if (::sendto(sock_,
+                static_cast<const void *>(sendbuf.data()),
+                sendbuf.size(),
+                0,
+                reinterpret_cast<const sockaddr *>(&dst_addr_),
+                static_cast<socklen_t>(sizeof(sockaddr_in))) == -1)
+    {
+      if (errno == ENETUNREACH)
+      {
+        throw NetworkUnreachableException(
+              "Error while sending data - network unreachable", errno);
+      }
 
-     throw SocketException("Error while sending data", errno);
-   }
+      throw SocketException("Error while sending data", errno);
+    }
+  }
 }
 
 void SocketLinux::enableBroadcastImpl()
