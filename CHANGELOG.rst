@@ -2,6 +2,12 @@
 Changelog for package rcdiscover
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.1.0 (2025-04-24)
+------------------
+
+* Prevent sending discovery requests on interfaces that are filtered out in cli tool
+* Do not send useless discovery packages from 127.0.0.1 to 127.0.0.1 (under Linux)
+
 2.0.4 (2025-03-26)
 ------------------
 
