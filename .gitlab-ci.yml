@@ -2,7 +2,7 @@ before_script:
   - export DISTRO_CODENAME=`lsb_release -cs` && echo Using distro $DISTRO_CODENAME
   - export ARCH_NAME=`uname -m` && echo Running on architecture $ARCH_NAME
   - export DEBIAN_FRONTEND=noninteractive
-  - apt-get update -yq && apt-get install -y --no-install-recommends lintian git wget libfltk1.3-dev 
+  - apt-get update -yq && apt-get install -y --no-install-recommends lintian git wget libfltk1.3-dev
 
 variables:
   GET_SOURCES_ATTEMPTS: 3
@@ -32,6 +32,12 @@ variables:
   image: registry.roboception.de/tools/docker_images:jammy-buildimage
   tags:
     - arm64
+    - docker
+
+.amd64_noble_t: &amd64_noble_job
+  image: registry.roboception.de/tools/docker_images:noble-buildimage
+  tags:
+    - amd64
     - docker
 
 #############
@@ -152,6 +158,10 @@ test:jammy:arm64:
   <<: *arm64_jammy_job
   extends: .test
 
+test:noble:amd64:
+  <<: *amd64_noble_job
+  extends: .test
+
 # Deploy testing (only on master)
 #################################
 package_testing:focal:amd64:
@@ -170,6 +180,10 @@ package_testing:jammy:arm64:
   <<: *arm64_jammy_job
   extends: .package_testing
 
+package_testing:noble:amd64:
+  <<: *amd64_noble_job
+  extends: .package_testing
+
 # Deploy stable (only for releases, version tags)
 #################################################
 package_stable:focal:amd64:
@@ -186,6 +200,10 @@ package_stable:jammy:amd64:
 
 test_release:jammy:arm64:
   <<: *arm64_jammy_job
+  extends: .package_stable
+
+test_release:noble:amd64:
+  <<: *amd64_noble_job
   extends: .package_stable
 
 # Build and push as docker image
