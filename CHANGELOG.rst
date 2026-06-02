@@ -2,6 +2,12 @@
 Changelog for package rcdiscover
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.1.2 (2026-06-02)
+------------------
+
+* update minimum cmake version to 3.5
+* [ci] remove focal, add noble arm64
+
 2.1.1 (2025-10-17)
 ------------------
 
