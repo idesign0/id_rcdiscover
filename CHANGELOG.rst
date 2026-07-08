@@ -2,6 +2,12 @@
 Changelog for package rcdiscover
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.2.0 (2026-07-08)
+------------------
+
+* Added IP reconfiguration dialog additionally to setting temporary IP
+* Speeding up discovery under Linux
+
 2.1.2 (2026-06-02)
 ------------------
 
