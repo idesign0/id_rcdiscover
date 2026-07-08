@@ -16,6 +16,7 @@
 #include "about_dialog.h"
 #include "reset_window.h"
 #include "set_tmp_ip_window.h"
+#include "change_ip_config_window.h"
 #include "reconnect_window.h"
 #include "label.h"
 #include "layout.h"
@@ -118,6 +119,12 @@ void setTmpIPCb(Fl_Widget *, void *user_data)
   win->doSetTmpIP();
 }
 
+void changeIPConfigCb(Fl_Widget *, void *user_data)
+{
+  DiscoverWindow *win=reinterpret_cast<DiscoverWindow *>(user_data);
+  win->doChangeIPConfig();
+}
+
 void reconnectCb(Fl_Widget *, void *user_data)
 {
   DiscoverWindow *win=reinterpret_cast<DiscoverWindow *>(user_data);
@@ -187,10 +194,12 @@ DiscoverWindow::DiscoverWindow(int ww, int hh, int _only_rc, const std::string &
     context_menu->add("Open WebGUI", 0, openWebGUICb, this, FL_MENU_DIVIDER);
     context_menu->add("Reset rc_visard", 0, resetCb, this);
     context_menu->add("Set temporary IP address", 0, setTmpIPCb, this);
+    context_menu->add("Change IP configuration", 0, changeIPConfigCb, this);
     context_menu->add("Reconnect device", 0, reconnectCb, this);
 
     openwebgui_index=context_menu->find_index("Open WebGUI");
     reset_index=context_menu->find_index("Reset rc_visard");
+    change_ip_config_index=context_menu->find_index("Change IP configuration");
 
     // device list
     list=new DeviceList(xc, yc, width, 260);
@@ -212,10 +221,13 @@ DiscoverWindow::DiscoverWindow(int ww, int hh, int _only_rc, const std::string &
     set_tmp_ip=new Button(ADD_RIGHT_XY, 200, row_height, "Set temporary IP address");
     set_tmp_ip->callback(setTmpIPCb, this);
 
+    change_ip_config=new Button(ADD_RIGHT_XY, 220, row_height, "Change IP configuration");
+    change_ip_config->callback(changeIPConfigCb, this);
+
     reconnect=new Button(ADD_RIGHT_XY, 180, row_height, "Reconnect device");
     reconnect->callback(reconnectCb, this);
 
-    Fl_Group *empty=new Fl_Group(ADD_RIGHT_XY, width-4*GAP_SIZE-(180+200+180+30), row_height);
+    Fl_Group *empty=new Fl_Group(ADD_RIGHT_XY, width-5*GAP_SIZE-(180+200+220+180+30), row_height);
     empty->end();
     group->resizable(empty);
 
@@ -311,6 +323,16 @@ void DiscoverWindow::doOpenContextMenu()
       const_cast<Fl_Menu_Item *>(&context_menu->menu()[reset_index])->deactivate();
     }
 
+    if (list->isReachableDeviceSelected())
+    {
+      // const cast is ok since menu item has been created dynamically
+      const_cast<Fl_Menu_Item *>(&context_menu->menu()[change_ip_config_index])->activate();
+    }
+    else
+    {
+      const_cast<Fl_Menu_Item *>(&context_menu->menu()[change_ip_config_index])->deactivate();
+    }
+
     // show context menu at current mouse pointer position
 
     context_menu->position(Fl::event_x(), Fl::event_y());
@@ -357,6 +379,12 @@ void DiscoverWindow::doSetTmpIP()
   win->updateDevices(list->getCurrentNameMACList(false), list->getSelectedMAC());
 }
 
+void DiscoverWindow::doChangeIPConfig()
+{
+  ChangeIPConfigWindow *win=ChangeIPConfigWindow::showWindow();
+  win->updateDevices(list->getCurrentNameMACIPList(false), list->getSelectedMAC());
+}
+
 void DiscoverWindow::doReconnect()
 {
   ReconnectWindow *win=ReconnectWindow::showWindow();
@@ -373,6 +401,7 @@ void DiscoverWindow::doClose()
   HelpWindow::hideWindow();
   ResetWindow::hideWindow();
   SetTmpIPWindow::hideWindow();
+  ChangeIPConfigWindow::hideWindow();
   ReconnectWindow::hideWindow();
 }
 
@@ -385,6 +414,15 @@ void DiscoverWindow::update()
   else
   {
     reset->deactivate();
+  }
+
+  if (list->isReachableDeviceSelected() || list->getSelectedMAC().size() == 0)
+  {
+    change_ip_config->activate();
+  }
+  else
+  {
+    change_ip_config->deactivate();
   }
 
   if (running)

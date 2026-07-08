@@ -103,9 +103,55 @@
     Setting a temporary IP is useful for making a device with misconfigured
     network settings reachable for web browsers and standard GigE Vision
     clients. The settings are only valid until the network is reconnected
-    or the device is restarted. Please use a standard GigE Vision 2.0 client,
-    such as gc_config that is provided in the rc_genicam_api package, to
-    reconfigure the network permanently.
+    or the device is restarted. To reconfigure the network permanently, use
+    the <em>Change IP configuration</em> button described below.
+</p>
+
+<H2><a name="changeipconfig" id="changeipconfig">Changing the IP configuration</a></H2>
+
+<p>
+    The <em>Change IP configuration</em> button changes the persistent
+    network configuration that a device applies on every boot, as opposed
+    to <em>Set temporary IP address</em>, whose effect is lost on reboot
+    or when the network is reconnected. This requires the device to
+    currently be reachable at an IP address, since, unlike discovery and
+    <em>Set temporary IP address</em>, this operation addresses the device
+    by its current IP address rather than by its MAC address.
+</p>
+
+<p>
+    In the popup, the device can be selected from the drop down menu, which
+    fills in its current IP address and MAC address, or a device that is
+    not listed can be addressed manually by entering its current IP
+    address (and, optionally, MAC address for reference).
+</p>
+
+<p>
+    Three addressing modes can be configured:
+</p>
+
+<ul>
+    <li><em>Persistent IP</em>: the device always boots with the fixed
+        <em>New IP address</em>, <em>Subnet mask</em> and <em>Default
+        gateway</em> entered below.</li>
+    <li><em>DHCP</em>: the device requests an IP address from a DHCP
+        server on every boot.</li>
+    <li><em>Link-local</em>: a fallback addressing mode (169.254.0.0/16)
+        that a GigE Vision device always supports and that cannot be
+        turned off; it is used automatically if neither Persistent IP nor
+        DHCP succeed.</li>
+</ul>
+
+<p>
+    Persistent IP and DHCP can be enabled at the same time, in which case
+    the device tries DHCP first and falls back to the persistent IP
+    address if no DHCP server responds.
+</p>
+
+<p>
+    After clicking <em>Change IP configuration</em>, use the
+    <em>reconnect</em> functionality described below, or restart the
+    device, to apply the new addressing mode immediately.
 </p>
 
 <H2><a name="reconnect" id="">Reconnecting a device</a></H2>

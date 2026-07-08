@@ -50,6 +50,7 @@ class DiscoverWindow : public Fl_Double_Window
     void doOpenWebGUI();
     void doReset();
     void doSetTmpIP();
+    void doChangeIPConfig();
     void doReconnect();
     void doClose();
 
@@ -72,8 +73,10 @@ class DiscoverWindow : public Fl_Double_Window
     Fl_Menu_Button *context_menu;
     int openwebgui_index;
     int reset_index;
+    int change_ip_config_index;
     Button *reset;
     Button *set_tmp_ip;
+    Button *change_ip_config;
     Button *reconnect;
     Button *help;
 };

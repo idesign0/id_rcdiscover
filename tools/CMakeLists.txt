@@ -74,6 +74,7 @@ if(BUILD_RCDISCOVER_GUI)
     rcdiscover-gui/device_list.cc
     rcdiscover-gui/reset_window.cc
     rcdiscover-gui/set_tmp_ip_window.cc
+    rcdiscover-gui/change_ip_config_window.cc
     rcdiscover-gui/reconnect_window.cc
     rcdiscover-gui/help_window.cc
     rcdiscover-gui/about_dialog.cc

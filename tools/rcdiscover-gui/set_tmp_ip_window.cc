@@ -218,7 +218,7 @@ SetTmpIPWindow::SetTmpIPWindow() : Fl_Double_Window(480, 238, "Set temporary IP 
   int width=480-2*GAP_SIZE;
   int row_height=28;
 
-  new Label(ADD_BELOW_XY, 120, row_height, "rc_visard");
+  new Label(ADD_BELOW_XY, 120, row_height, "Device");
   device=new DeviceChoice(ADD_RIGHT_XY, width-GAP_SIZE-120, row_height, 0);
   device->add("<Custom>");
   device->callback(changingDeviceCb, this);

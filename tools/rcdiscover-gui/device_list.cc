@@ -182,6 +182,12 @@ bool DeviceList::isReachableRCDeviceSelected()
     device[index[sel]].item[2].compare(0, 3, "rc_") == 0);
 }
 
+bool DeviceList::isReachableDeviceSelected()
+{
+  int sel=getSelectedRow();
+  return (sel >= 0 && device[index[sel]].reachable);
+}
+
 bool DeviceList::isRCVisardSelected()
 {
   int sel=getSelectedRow();
@@ -209,6 +215,23 @@ std::vector<std::pair<std::string, std::string> > DeviceList::getCurrentNameMACL
     if (!only_rc_visard || device[index[i]].item[2].compare(0, 9, "rc_visard") == 0)
     {
       ret.push_back(std::pair<std::string, std::string>(device[index[i]].item[0], device[index[i]].item[5]));
+    }
+  }
+
+  return ret;
+}
+
+std::vector<std::tuple<std::string, std::string, std::string> > DeviceList::getCurrentNameMACIPList(bool only_rc_visard)
+{
+  std::vector<std::tuple<std::string, std::string, std::string> > ret;
+
+  for (size_t i=0; i<index.size(); i++)
+  {
+    if (device[index[i]].reachable &&
+      (!only_rc_visard || device[index[i]].item[2].compare(0, 9, "rc_visard") == 0))
+    {
+      ret.push_back(std::make_tuple(device[index[i]].item[0], device[index[i]].item[5],
+        device[index[i]].item[4]));
     }
   }
 

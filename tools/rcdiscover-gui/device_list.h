@@ -18,6 +18,7 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <tuple>
 
 class DeviceList : public Fl_Table_Row
 {
@@ -34,9 +35,11 @@ class DeviceList : public Fl_Table_Row
 
     int getSelectedRow();
     bool isReachableRCDeviceSelected();
+    bool isReachableDeviceSelected();
     bool isRCVisardSelected();
     std::string getSelectedMAC();
     std::vector<std::pair<std::string, std::string> > getCurrentNameMACList(bool only_rc_visard);
+    std::vector<std::tuple<std::string, std::string, std::string> > getCurrentNameMACIPList(bool only_rc_visard);
 
     std::string getCell(int r, int c);
     void openWebGUI(int r);
