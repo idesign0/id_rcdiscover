@@ -55,7 +55,8 @@
 #endif
 
 #include <vector>
-#include <future>
+#include <chrono>
+#include <utility>
 #include <string.h>
 #include <errno.h>
 #include <algorithm>
@@ -70,7 +71,8 @@ typedef SocketLinux SocketImpl;
 #endif
 
 Discover::Discover() :
-  sockets_(SocketType::createAndBindForAllInterfaces(3956))
+  sockets_(SocketType::createAndBindForAllInterfaces(3956)),
+  stop_(false)
 {
   for (auto &socket : sockets_)
   {
@@ -80,28 +82,21 @@ Discover::Discover() :
 }
 
 Discover::~Discover()
-{ }
+{
+  stop_=true;
+
+  for (auto &t : listener_threads_)
+  {
+    if (t.joinable())
+    {
+      t.join();
+    }
+  }
+}
 
 void Discover::broadcastRequest()
 {
-  req_nums_.clear();
-
-  std::vector<uint8_t> discovery_cmd{0x42, 0x11, 0, 0x02, 0, 0, 0, 0};
-
-  for (auto &socket : sockets_)
-  {
-    req_nums_.push_back(GigERequestCounter::getNext());
-    std::tie(discovery_cmd[6], discovery_cmd[7]) = req_nums_.back();
-
-    try
-    {
-      socket.send(discovery_cmd);
-    }
-    catch(const NetworkUnreachableException &)
-    {
-      continue;
-    }
-  }
+  broadcastRequest(std::vector<std::string>());
 }
 
 void Discover::broadcastRequest(const std::vector<std::string> &iface)
@@ -127,98 +122,108 @@ void Discover::broadcastRequest(const std::vector<std::string> &iface)
       }
     }
   }
+
+  // req_nums_ is now final for the lifetime of this object, so it is safe
+  // for the listener threads to read it without further synchronization
+
+  startListening();
+}
+
+void Discover::startListening()
+{
+  for (auto &socket : sockets_)
+  {
+    listener_threads_.emplace_back(&Discover::listenOnSocket, this, std::ref(socket));
+  }
+}
+
+void Discover::listenOnSocket(SocketType &socket)
+{
+  auto sock = socket.getHandle<typename SocketType::SocketType>();
+
+  while (!stop_)
+  {
+    // fd_set and timeout must be reinitialized on every iteration since
+    // select() may modify both in place; a short timeout is used so
+    // destruction of this object is not delayed for long
+
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(sock, &fds);
+
+    struct timeval tv;
+    tv.tv_sec=0;
+    tv.tv_usec=100000;
+
+    if (select(static_cast<int>(sock+1), &fds, NULL, NULL, &tv) > 0)
+    {
+      // get package
+
+      uint8_t p[600];
+
+      struct sockaddr_in addr;
+#ifdef WIN32
+      int naddr = sizeof(addr);
+#else
+      socklen_t naddr = sizeof(addr);
+#endif
+      memset(&addr, 0, naddr);
+
+      long n = recvfrom(sock,
+                        reinterpret_cast<char *>(p), sizeof(p), 0,
+                        reinterpret_cast<struct sockaddr *>(&addr), &naddr);
+
+      // check if received package is a valid discovery acknowledge
+
+      if (n >= 8)
+      {
+        if (p[0] == 0 && p[1] == 0 && p[2] == 0 &&
+            p[3] == 0x03)
+        {
+          if (std::find(req_nums_.begin(), req_nums_.end(),
+                        std::make_tuple(p[6], p[7])) != req_nums_.end())
+          {
+            size_t len=(static_cast<size_t>(p[4])<<8)|p[5];
+
+            if (static_cast<size_t>(n) >= len+8)
+            {
+              // extract information and store in list
+
+              DeviceInfo device_info(socket.getIfaceName());
+              device_info.set(p+8, len);
+
+              if (device_info.isValid())
+              {
+                {
+                  std::lock_guard<std::mutex> lock(mutex_);
+                  pending_.push_back(std::move(device_info));
+                }
+
+                cv_.notify_one();
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 bool Discover::getResponse(std::vector<DeviceInfo> &info,
                            int timeout_per_socket)
 {
-  // setup waiting for data to arrive
+  std::unique_lock<std::mutex> lock(mutex_);
 
-  struct timeval tv;
-  tv.tv_sec=timeout_per_socket/1000;
-  tv.tv_usec=(timeout_per_socket%1000)*1000;
+  cv_.wait_for(lock, std::chrono::milliseconds(timeout_per_socket),
+              [this] { return !pending_.empty(); });
 
-  // try to get a valid package (repeat if an invalid package is received)
+  bool ret = !pending_.empty();
 
-  const auto &req_nums = req_nums_;
-
-  std::vector<std::future<DeviceInfo>> futures;
-  for (auto &socket : sockets_)
+  for (auto &device_info : pending_)
   {
-    futures.push_back(std::async(std::launch::async, [&socket, &tv, &req_nums]
-    {
-      DeviceInfo device_info(socket.getIfaceName());
-      device_info.clear();
-
-      int count = 10;
-
-      auto sock = socket.getHandle<typename SocketType::SocketType>();
-
-      fd_set fds;
-      FD_ZERO(&fds);
-      FD_SET(sock, &fds);
-
-      while (!device_info.isValid() && count > 0)
-      {
-        count--;
-
-        if (select(static_cast<int>(sock+1), &fds, NULL, NULL, &tv) > 0)
-        {
-          // get package
-
-          uint8_t p[600];
-
-          struct sockaddr_in addr;
-#ifdef WIN32
-          int naddr = sizeof(addr);
-#else
-          socklen_t naddr = sizeof(addr);
-#endif
-          memset(&addr, 0, naddr);
-
-          long n = recvfrom(sock,
-                            reinterpret_cast<char *>(p), sizeof(p), 0,
-                            reinterpret_cast<struct sockaddr *>(&addr), &naddr);
-
-          // check if received package is a valid discovery acknowledge
-
-          if (n >= 8)
-          {
-            if (p[0] == 0 && p[1] == 0 && p[2] == 0 &&
-                p[3] == 0x03)
-            {
-              if (std::find(req_nums.begin(), req_nums.end(),
-                            std::make_tuple(p[6], p[7])) != req_nums.end())
-              {
-                size_t len=(static_cast<size_t>(p[4])<<8)|p[5];
-
-                if (static_cast<size_t>(n) >= len+8)
-                {
-                  // extract information and store in list
-
-                  device_info.set(p+8, len);
-                }
-              }
-            }
-          }
-        }
-        else
-        {
-          count=0;
-        }
-      }
-
-      return device_info;
-    }));
-
+    info.push_back(std::move(device_info));
   }
-
-  bool ret = false;
-  for (auto &f : futures)
-  {
-    info.push_back(f.get());
-    ret |= info.back().isValid();
-  }
+  pending_.clear();
 
   return ret;
 }

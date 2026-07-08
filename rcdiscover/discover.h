@@ -44,6 +44,11 @@
 #include "socket_linux.h"
 #endif
 
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+
 namespace rcdiscover
 {
 
@@ -89,8 +94,25 @@ class Discover
     bool getResponse(std::vector<DeviceInfo> &info, int timeout_per_socket=1000);
 
   private:
+    /**
+      Starts one persistent listener thread per socket, each continuously
+      waiting for and collecting valid discovery responses into pending_
+      until the object is destroyed. This avoids spawning a fresh batch of
+      threads on every getResponse() call.
+    */
+
+    void startListening();
+    void listenOnSocket(SocketType &socket);
+
     std::vector<SocketType> sockets_;
     std::vector<std::tuple<std::uint8_t, std::uint8_t>> req_nums_;
+
+    std::vector<std::thread> listener_threads_;
+    std::atomic<bool> stop_;
+
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    std::vector<DeviceInfo> pending_;
 };
 
 }
